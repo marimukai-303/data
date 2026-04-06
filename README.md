@@ -1,35 +1,31 @@
-# プロジェクト名: 酒の販売サイト
-JavaとMySQLを使用した、画像付きプロフィール管理および購入履歴管理システムです。
+## クラス図
+```mermaid
+classDiagram
+    %% Controller (Servlet) - ユーザーの入り口
+    class WelcomeServlet { +doGet() サイトTOP }
+    class RegisterServlet { +doPost() 会員登録 }
+    class LoginServlet { +doPost() 認証 }
+    class ShoppingServlet { +doPost() カート追加 }
+    class CartServlet { +doGet() カート表示 }
+    class DeleteServlet { +doPost() 商品削除 }
+    class ConfirmPurchaseServlet { +doPost() 購入確定 }
 
-## 1. システム概要
-本システムは、ユーザーのアカウント管理（画像付きプロフィール）および商品の購入履歴を管理するWebアプリケーションです。
+    %% Service (Logic) - 判定・処理
+    class LoginLogic { +execute(Login) Account }
 
-## 2. 機能要件
-### 2.1 ユーザー管理
-- **新規会員登録**: ユーザーID、パスワード、メール、氏名、年齢、画像を登録可能。
-- **年齢制限**: **20歳未満**のユーザーは新規登録できないバリデーション機能を搭載。
-- **ログイン認証**: `USER_ID` と `PASS` による認証。
+    %% Repository (DAO) - DB操作
+    class AccountsDAO { +insert() +findByLogin() }
+    class PurchaseDAO { +insertPurchases() +deleteById() }
 
-### 2.2 購入管理
-- **購入処理**: ログインユーザーによる商品購入と履歴の保存。
-- **履歴参照**: `purchase_id` に紐づく購入情報の管理。
+    %% Entity (Model) - データの持ち運び
+    class Account { userId, name, prof }
+    class Purchase { productId, quantity, date }
 
-## 3. データベース設計 (MySQL)
-### accounts テーブル
-| 項目名 | 型 | 制約 | 備考 |
-| :--- | :--- | :--- | :--- |
-| USER_ID | VARCHAR(10) | PRIMARY KEY | |
-| PASS | VARCHAR(10) | NOT NULL | |
-| AGE | INT | NOT NULL | 20以上のみ |
-| IMAGE_PATH | VARCHAR(255) | | 画像の保存パス |
-
-### purchase テーブル
-| 項目名 | 型 | 制約 | 備考 |
-| :--- | :--- | :--- | :--- |
-| purchase_id | INT | PRIMARY KEY | |
-| PRODUCT | INT | NOT NULL | 商品コード |
-
-## 4. 開発環境
-- **言語**: Java
-- **DB**: MySQL
-- **ツール**: Visual Studio Code / Eclipse
+    %% 遷移と依存の関係
+    WelcomeServlet ..> RegisterServlet : 登録へ
+    WelcomeServlet ..> LoginServlet : ログインへ
+    LoginServlet ..> LoginLogic : 認証依頼
+    ShoppingServlet ..> CartServlet : カート確認
+    CartServlet ..> DeleteServlet : 削除実行
+    CartServlet ..> ConfirmPurchaseServlet : 購入確定
+    ConfirmPurchaseServlet ..> PurchaseDAO : DB一括保存
