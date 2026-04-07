@@ -29,3 +29,33 @@ classDiagram
     CartServlet ..> DeleteServlet : 削除実行
     CartServlet ..> ConfirmPurchaseServlet : 購入確定
     ConfirmPurchaseServlet ..> PurchaseDAO : DB一括保存
+```
+
+## 2. 画面遷移図
+```mermaid
+graph TD
+    Start((開始)) --> Welcome[WelcomeServlet]
+    Welcome -->|新規登録| Register[Register.jsp]
+    Welcome -->|ログイン| LoginView[login.jsp]
+    
+    Register --> RegServlet{RegisterServlet}
+    RegServlet -->|成功| RegOK[RegisterOK.jsp]
+    RegServlet -->|失敗| RegNG[RegisterNG.jsp]
+    RegNG -->|戻る| Register
+    RegOK -->|買い物を始める| Shopping[Shopping.jsp]
+
+    LoginView --> LoginServlet{LoginServlet}
+    LoginServlet -->|成功| Shopping
+    LoginServlet -->|失敗| LoginNG[loginNG.jsp]
+    LoginNG -->|戻る| LoginView
+
+    Shopping --> ShopServlet{ShoppingServlet}
+    ShopServlet --> Cart[cart.jsp]
+    
+    Cart -->|削除実行| DelServlet{DeleteServlet}
+    DelServlet --> Cart
+    
+    Cart -->|購入確定| ConfirmServlet{ConfirmPurchaseServlet}
+    ConfirmServlet -->|完了| Done[purchaseComplete.jsp]
+    ConfirmServlet -->|失敗| Shopping
+```
