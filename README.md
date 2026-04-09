@@ -1,61 +1,65 @@
 ## クラス図
 ```mermaid
 classDiagram
-    %% Controller (Servlet) - ユーザーの入り口
-    class WelcomeServlet { +doGet() サイトTOP }
-    class RegisterServlet { +doPost() 会員登録 }
-    class LoginServlet { +doPost() 認証 }
+    %% Controller (Servlet)
+    class WelcomeServlet { +doGet() サイトTOP表示 }
+    class CheckUserServlet { +doPost() メルアド登録確認 }
+    class RegisterServlet { +doPost() 会員登録(生年月日DATE型) }
+    class LoginServlet { +doPost() パスワード認証 }
     class ShoppingServlet { +doPost() カート追加 }
     class CartServlet { +doGet() カート表示 }
     class DeleteServlet { +doPost() 商品削除 }
-    class ConfirmPurchaseServlet { +doPost() 購入確定 }
+    class ConfirmPurchaseServlet { +doPost() 購入確定・DB保存 }
 
-    %% Service (Logic) - 判定・処理
+    %% Service (Logic)
+    class UserCheckLogic { +isRegistered(email) boolean }
     class LoginLogic { +execute(Login) Account }
 
-    %% Repository (DAO) - DB操作
-    class AccountsDAO { +insert() +findByLogin() }
-    class PurchaseDAO { +insertPurchases() +deleteById() }
+    %% Repository (DAO)
+    class AccountsDAO { +findByEmail(email) +insertAccount() }
+    class PurchaseDAO { +insertPurchases() }
 
-    %% Entity (Model) - データの持ち運び
-    class Account { userId, name, prof }
-    class Purchase { productId, quantity, date }
-
-    %% 遷移と依存の関係
-    WelcomeServlet ..> RegisterServlet : 登録へ
-    WelcomeServlet ..> LoginServlet : ログインへ
+    %% 依存関係
+    WelcomeServlet ..> CheckUserServlet : メルアド入力へ
+    CheckUserServlet ..> UserCheckLogic : 登録有無の判定
+    CheckUserServlet ..> RegisterServlet : 未登録なら遷移
+    CheckUserServlet ..> LoginServlet : 登録済なら遷移
     LoginServlet ..> LoginLogic : 認証依頼
-    ShoppingServlet ..> CartServlet : カート確認
     CartServlet ..> DeleteServlet : 削除実行
-    CartServlet ..> ConfirmPurchaseServlet : 購入確定
-    ConfirmPurchaseServlet ..> PurchaseDAO : DB一括保存
+    ConfirmPurchaseServlet ..> PurchaseDAO : purchaseテーブルへ保存
 ```
 
 ## 2. 画面遷移図
 ```mermaid
 graph TD
     Start((開始)) --> Welcome[WelcomeServlet]
-    Welcome -->|新規登録| Register[Register.jsp]
-    Welcome -->|ログイン| LoginView[login.jsp]
+    Welcome --> EmailView[EmailInput.jsp : メルアド入力]
     
+    EmailView --> CheckServlet{CheckUserServlet}
+    
+    %% Amazon方式の分岐
+    CheckServlet -->|未登録| Register[Register.jsp : 生年月日入力あり]
+    CheckServlet -->|登録済| LoginView[login.jsp : パスワード入力]
+
+    %% 新規登録の流れ
     Register --> RegServlet{RegisterServlet}
     RegServlet -->|成功| RegOK[RegisterOK.jsp]
-    RegServlet -->|失敗| RegNG[RegisterNG.jsp]
-    RegNG -->|戻る| Register
+    RegServlet -->|失敗| Register
     RegOK -->|買い物を始める| Shopping[Shopping.jsp]
 
+    %% ログインの流れ
     LoginView --> LoginServlet{LoginServlet}
     LoginServlet -->|成功| Shopping
-    LoginServlet -->|失敗| LoginNG[loginNG.jsp]
-    LoginNG -->|戻る| LoginView
+    LoginServlet -->|失敗| LoginView
 
+    %% ショッピング・購入の流れ
     Shopping --> ShopServlet{ShoppingServlet}
     ShopServlet --> Cart[cart.jsp]
     
     Cart -->|削除実行| DelServlet{DeleteServlet}
-    DelServlet --> Cart
+    DelServlet -->|最新状態を表示| Cart
     
     Cart -->|購入確定| ConfirmServlet{ConfirmPurchaseServlet}
-    ConfirmServlet -->|完了| Done[purchaseComplete.jsp]
-    ConfirmServlet -->|失敗| Shopping
+    ConfirmServlet -->|DB保存完了| Done[purchaseComplete.jsp]
+    ConfirmServlet -->|在庫不足等エラー| Shopping
 ```
